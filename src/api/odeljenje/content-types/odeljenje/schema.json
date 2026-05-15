@@ -1,0 +1,26 @@
+{
+  "kind": "collectionType",
+  "collectionName": "odeljenjas",
+  "info": {
+    "singularName": "odeljenje",
+    "pluralName": "odeljenjas",
+    "displayName": "Odeljenje"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "naziv": { "type": "string" },
+    "slug": { "type": "uid", "targetField": "naziv" },
+    "opis": { "type": "text" },
+    "smer": { "type": "string" },
+    "trajanje": { "type": "string" },
+    "zvanje": { "type": "string" },
+    "redosled": { "type": "integer" },
+    "istaknuta_slika": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": ["images"]
+    }
+  }
+}

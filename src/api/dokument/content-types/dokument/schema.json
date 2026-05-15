@@ -1,0 +1,28 @@
+{
+  "kind": "collectionType",
+  "collectionName": "dokumenta",
+  "info": {
+    "singularName": "dokument",
+    "pluralName": "dokumenta",
+    "displayName": "Dokument"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "naziv": {
+      "type": "string"
+    },
+    "kategorija": {
+      "type": "string"
+    },
+    "datum": {
+      "type": "date"
+    },
+    "fajl": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": ["files"]
+    }
+  }
+}

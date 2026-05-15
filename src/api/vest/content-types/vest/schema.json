@@ -1,0 +1,44 @@
+{
+  "kind": "collectionType",
+  "collectionName": "vests",
+  "info": {
+    "singularName": "vest",
+    "pluralName": "vests",
+    "displayName": "Vest"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "naslov": {
+      "type": "string"
+    },
+    "slug": {
+      "type": "uid",
+      "targetField": "naslov"
+    },
+    "sadrzaj": {
+      "type": "blocks"
+    },
+    "datum_objave": {
+      "type": "date"
+    },
+    "kategorija": {
+      "type": "string"
+    },
+    "istaknuta": {
+      "type": "boolean"
+    },
+    "slika": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
+    }
+  }
+}
