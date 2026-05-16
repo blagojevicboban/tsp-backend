@@ -57,11 +57,11 @@ async function migrate() {
         for (const valueRow of valuesMatch) {
           const parts = parseSqlRow(valueRow);
           
-          if (parts.length >= 6) {
+          if (parts.length >= 21) {
             const content = parts[4];
             const wpTitle = parts[5];
             const wpSlug = parts[11]; // post_name
-            const type = parts[19]; // post_type
+            const type = parts[20]; // post_type (popravljen index sa 19 na 20)
 
             if (type === 'post' || type === 'vest') {
               // Pokusaj uparivanja
