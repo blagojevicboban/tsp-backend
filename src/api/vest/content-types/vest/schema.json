@@ -19,7 +19,7 @@
       "targetField": "naslov"
     },
     "sadrzaj": {
-      "type": "blocks"
+      "type": "richtext"
     },
     "datum_objave": {
       "type": "date"
