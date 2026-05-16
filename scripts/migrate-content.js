@@ -3,7 +3,6 @@ const readline = require('readline');
 const Database = require('better-sqlite3');
 const path = require('path');
 
-// Putanje do fajlova
 const SQL_FILE = path.join(__dirname, '../backup.sql');
 const DB_FILE = path.join(__dirname, '../.tmp/data.db');
 
@@ -14,48 +13,73 @@ if (!fs.existsSync(DB_FILE)) {
 
 const db = new Database(DB_FILE);
 
+// Funkcija za ciscenje HTML entiteta i specijalnih karaktera iz naslova
+function normalize(str) {
+  if (!str) return '';
+  return str
+    .replace(/&#8220;|&#8221;|&#8222;|&#8211;|&#8212;|&#8216;|&#8217;/g, '"') // Zameni razne navodnike i crte
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/\s+/g, ' ') // Svi razmaci u jedan
+    .trim()
+    .toLowerCase();
+}
+
+// Funkcija za kreiranje sluga iz naslova (ako zatreba za uparivanje)
+function slugify(str) {
+  return str
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/[\s_]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 async function migrate() {
-  console.log('Pokrecem migraciju sadrzaja iz backup.sql u data.db...');
+  console.log('Pokrecem ROBUSNU migraciju sadrzaja...');
   
+  // Ucitaj sve vesti iz Strapi baze u memoriju radi lakseg uparivanja
+  const strapiVests = db.prepare('SELECT id, naslov, slug FROM vests').all();
+  console.log(`Ucitano ${strapiVests.length} vesti iz Strapi baze.`);
+
   const fileStream = fs.createReadStream(SQL_FILE);
   const rl = readline.createInterface({
     input: fileStream,
     crlfDelay: Infinity
   });
 
-  let count = 0;
   let updated = 0;
+  let skipped = 0;
 
   for await (const line of rl) {
-    if (line.startsWith('INSERT INTO `tsp_posts` VALUES')) {
-      // Izvlacenje redova iz INSERT komande
-      // Ovo je malo triki jer redovi mogu imati zareze unutar teksta
-      // Ali svaki red pocinje sa ( i zavrsava sa ),
-      
+    if (line.includes('INSERT INTO `tsp_posts` VALUES')) {
       const valuesMatch = line.match(/\((.*?)\)(?:,|$)/g);
       if (valuesMatch) {
         for (const valueRow of valuesMatch) {
-          // Parsiranje jednog reda (vrlo uprosceno, ali cesto radi za SQL dumpove)
-          // Red izgleda otprilike ovako: (ID, author, date, date_gmt, content, title, excerpt, status, ...)
-          // Koristicemo split po ',' ali pazljivo sa navodnicima
-          
           const parts = parseSqlRow(valueRow);
           
           if (parts.length >= 6) {
-            const id = parts[0];
             const content = parts[4];
-            const title = parts[5];
-            const slug = parts[11]; // post_name
+            const wpTitle = parts[5];
+            const wpSlug = parts[11]; // post_name
             const type = parts[19]; // post_type
 
             if (type === 'post' || type === 'vest') {
-              // Pokusaj da pronadjes vest u Strapi bazi po naslovu ili slugu
-              const stmt = db.prepare('UPDATE vests SET sadrzaj = ? WHERE naslov = ? AND (sadrzaj IS NULL OR sadrzaj = "")');
-              const result = stmt.run(content, title);
-              
-              if (result.changes > 0) {
-                updated++;
-                if (updated % 50 === 0) console.log(`Azurirano ${updated} vesti...`);
+              // Pokusaj uparivanja
+              const match = strapiVests.find(v => 
+                v.slug === wpSlug || 
+                normalize(v.naslov) === normalize(wpTitle)
+              );
+
+              if (match && content && content.length > 10) {
+                const stmt = db.prepare('UPDATE vests SET sadrzaj = ? WHERE id = ?');
+                const result = stmt.run(content, match.id);
+                
+                if (result.changes > 0) {
+                  updated++;
+                  if (updated % 50 === 0) console.log(`Azurirano ${updated} vesti...`);
+                }
+              } else {
+                skipped++;
               }
             }
           }
@@ -64,22 +88,20 @@ async function migrate() {
     }
   }
 
-  console.log(`Zavrseno! Azurirano ukupno ${updated} vesti.`);
+  console.log(`\nMigracija zavrsena!`);
+  console.log(`- Ukupno azurirano: ${updated} vesti.`);
+  console.log(`- Preskoceno (bez poklapanja): ${skipped}`);
   db.close();
 }
 
-// Pomocna funkcija za grubo parsiranje SQL reda
 function parseSqlRow(row) {
-  // Skidamo zagrade na pocetku i kraju
   const content = row.trim().slice(1, -1);
   const parts = [];
   let current = '';
   let inString = false;
-  let quoteChar = '';
-
+  
   for (let i = 0; i < content.length; i++) {
     const char = content[i];
-    
     if (char === "'" && content[i-1] !== '\\') {
       inString = !inString;
     } else if (char === ',' && !inString) {
@@ -98,10 +120,7 @@ function cleanValue(val) {
   if (clean.startsWith("'") && clean.endsWith("'")) {
     clean = clean.slice(1, -1);
   }
-  // Unescape SQL quotes
   return clean.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/\\n/g, '\n').replace(/\\r/g, '\r');
 }
 
-migrate().catch(err => {
-  console.error('Greska tokom migracije:', err);
-});
+migrate().catch(err => console.error('Greska:', err));
