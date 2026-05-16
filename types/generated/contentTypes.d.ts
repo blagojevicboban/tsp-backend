@@ -493,7 +493,8 @@ export interface ApiOdeljenjeOdeljenje extends Struct.CollectionTypeSchema {
     > &
       Schema.Attribute.Private;
     naziv: Schema.Attribute.String;
-    opis: Schema.Attribute.Text;
+    opis: Schema.Attribute.RichText &
+      Schema.Attribute.CustomField<'plugin::ckeditor.CKEditor'>;
     publishedAt: Schema.Attribute.DateTime;
     redosled: Schema.Attribute.Integer;
     slug: Schema.Attribute.UID<'naziv'>;
@@ -528,7 +529,8 @@ export interface ApiVestVest extends Struct.CollectionTypeSchema {
       Schema.Attribute.Private;
     naslov: Schema.Attribute.String;
     publishedAt: Schema.Attribute.DateTime;
-    sadrzaj: Schema.Attribute.Blocks;
+    sadrzaj: Schema.Attribute.RichText &
+      Schema.Attribute.CustomField<'plugin::ckeditor.CKEditor'>;
     slika: Schema.Attribute.Media<'images' | 'files' | 'videos' | 'audios'>;
     slug: Schema.Attribute.UID<'naslov'>;
     updatedAt: Schema.Attribute.DateTime;

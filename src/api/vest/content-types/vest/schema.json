@@ -19,7 +19,8 @@
       "targetField": "naslov"
     },
     "sadrzaj": {
-      "type": "text"
+      "type": "richtext",
+      "customField": "plugin::ckeditor.CKEditor"
     },
     "datum_objave": {
       "type": "date"

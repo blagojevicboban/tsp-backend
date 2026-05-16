@@ -12,7 +12,10 @@
   "attributes": {
     "naziv": { "type": "string" },
     "slug": { "type": "uid", "targetField": "naziv" },
-    "opis": { "type": "text" },
+    "opis": {
+      "type": "richtext",
+      "customField": "plugin::ckeditor.CKEditor"
+    },
     "smer": { "type": "string" },
     "trajanje": { "type": "string" },
     "zvanje": { "type": "string" },
