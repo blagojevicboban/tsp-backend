@@ -67,7 +67,7 @@ async function migrate() {
             );
 
             if (match && content && content.length > 10) {
-              const stmt = db.prepare('UPDATE vests SET sadrzaj = ? WHERE id = ? AND (sadrzaj IS NULL OR sadrzaj = "")');
+              const stmt = db.prepare("UPDATE vests SET sadrzaj = ? WHERE id = ? AND (sadrzaj IS NULL OR sadrzaj = '')");
               const result = stmt.run(content, match.id);
               
               if (result.changes > 0) {
