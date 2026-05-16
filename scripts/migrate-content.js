@@ -13,31 +13,20 @@ if (!fs.existsSync(DB_FILE)) {
 
 const db = new Database(DB_FILE);
 
-// Funkcija za ciscenje HTML entiteta i specijalnih karaktera iz naslova
 function normalize(str) {
   if (!str) return '';
   return str
-    .replace(/&#8220;|&#8221;|&#8222;|&#8211;|&#8212;|&#8216;|&#8217;/g, '"') // Zameni razne navodnike i crte
+    .replace(/&#8220;|&#8221;|&#8222;|&#8211;|&#8212;|&#8216;|&#8217;/g, '"')
     .replace(/&nbsp;/g, ' ')
     .replace(/&amp;/g, '&')
-    .replace(/\s+/g, ' ') // Svi razmaci u jedan
+    .replace(/\s+/g, ' ')
     .trim()
     .toLowerCase();
 }
 
-// Funkcija za kreiranje sluga iz naslova (ako zatreba za uparivanje)
-function slugify(str) {
-  return str
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, '')
-    .replace(/[\s_]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
-
 async function migrate() {
-  console.log('Pokrecem ROBUSNU migraciju sadrzaja...');
+  console.log('Pokrecem FINALNU migraciju sadrzaja...');
   
-  // Ucitaj sve vesti iz Strapi baze u memoriju radi lakseg uparivanja
   const strapiVests = db.prepare('SELECT id, naslov, slug FROM vests').all();
   console.log(`Ucitano ${strapiVests.length} vesti iz Strapi baze.`);
 
@@ -47,62 +36,74 @@ async function migrate() {
     crlfDelay: Infinity
   });
 
+  let inTable = false;
   let updated = 0;
-  let skipped = 0;
+  let totalFoundInSql = 0;
 
   for await (const line of rl) {
-    if (line.includes('INSERT INTO `tsp_posts` VALUES')) {
-      const valuesMatch = line.match(/\((.*?)\)(?:,|$)/g);
-      if (valuesMatch) {
-        for (const valueRow of valuesMatch) {
-          const parts = parseSqlRow(valueRow);
-          
-          if (parts.length >= 21) {
-            const content = parts[4];
-            const wpTitle = parts[5];
-            const wpSlug = parts[11]; // post_name
-            const type = parts[20]; // post_type (popravljen index sa 19 na 20)
+    const trimLine = line.trim();
 
-            if (type === 'post' || type === 'vest') {
-              // Pokusaj uparivanja
-              const match = strapiVests.find(v => 
-                v.slug === wpSlug || 
-                normalize(v.naslov) === normalize(wpTitle)
-              );
+    if (trimLine.includes('INSERT INTO') && trimLine.includes('tsp_posts')) {
+      inTable = true;
+      continue;
+    }
 
-              if (match && content && content.length > 10) {
-                const stmt = db.prepare('UPDATE vests SET sadrzaj = ? WHERE id = ?');
-                const result = stmt.run(content, match.id);
-                
-                if (result.changes > 0) {
-                  updated++;
-                  if (updated % 50 === 0) console.log(`Azurirano ${updated} vesti...`);
-                }
-              } else {
-                skipped++;
+    if (inTable) {
+      if (trimLine.startsWith('(')) {
+        const parts = parseSqlRow(trimLine);
+        
+        if (parts.length >= 21) {
+          const content = parts[4];
+          const wpTitle = parts[5];
+          const wpSlug = parts[11];
+          const type = parts[20];
+
+          if (type === 'post' || type === 'vest' || type === 'article') {
+            totalFoundInSql++;
+            
+            const match = strapiVests.find(v => 
+              v.slug === wpSlug || 
+              normalize(v.naslov) === normalize(wpTitle)
+            );
+
+            if (match && content && content.length > 10) {
+              const stmt = db.prepare('UPDATE vests SET sadrzaj = ? WHERE id = ? AND (sadrzaj IS NULL OR sadrzaj = "")');
+              const result = stmt.run(content, match.id);
+              
+              if (result.changes > 0) {
+                updated++;
+                if (updated % 50 === 0) console.log(`Azurirano ${updated} vesti...`);
               }
             }
           }
         }
       }
+
+      if (trimLine.endsWith(';')) {
+        inTable = false;
+      }
     }
   }
 
   console.log(`\nMigracija zavrsena!`);
-  console.log(`- Ukupno azurirano: ${updated} vesti.`);
-  console.log(`- Preskoceno (bez poklapanja): ${skipped}`);
+  console.log(`- Pronadjeno postova u SQL-u: ${totalFoundInSql}`);
+  console.log(`- Uspesno azurirano u bazi: ${updated}`);
   db.close();
 }
 
 function parseSqlRow(row) {
-  const content = row.trim().slice(1, -1);
+  let content = row.trim();
+  if (content.startsWith('(')) content = content.slice(1);
+  if (content.endsWith('),')) content = content.slice(0, -2);
+  if (content.endsWith(');')) content = content.slice(0, -2);
+  
   const parts = [];
   let current = '';
   let inString = false;
   
   for (let i = 0; i < content.length; i++) {
     const char = content[i];
-    if (char === "'" && content[i-1] !== '\\') {
+    if (char === "'" && (i === 0 || content[i-1] !== '\\')) {
       inString = !inString;
     } else if (char === ',' && !inString) {
       parts.push(cleanValue(current));
