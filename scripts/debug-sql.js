@@ -5,7 +5,7 @@ const path = require('path');
 const SQL_FILE = path.join(__dirname, '../backup.sql');
 
 async function debug() {
-  console.log('DEBUG: Proveravam backup.sql...');
+  console.log('DEBUG v2: Detaljna analiza backup.sql...');
   
   if (!fs.existsSync(SQL_FILE)) {
     console.error('Fajl backup.sql nije pronadjen!');
@@ -18,35 +18,61 @@ async function debug() {
     crlfDelay: Infinity
   });
 
-  let linesFound = 0;
+  let inTable = false;
+  let linesProcessed = 0;
   let rowsFound = 0;
 
   for await (const line of rl) {
+    linesProcessed++;
+    
+    // Detektuj pocetak INSERT-a za tsp_posts
     if (line.includes('INSERT INTO') && line.includes('tsp_posts')) {
-      linesFound++;
-      console.log(`\nPronasao sam INSERT liniju br. ${linesFound}`);
-      
-      const valuesMatch = line.match(/\((.*?)\)(?:,|$)/g);
-      if (valuesMatch) {
-        console.log(`Linija sadrzi ${valuesMatch.length} redova.`);
-        for (let i = 0; i < Math.min(valuesMatch.length, 3); i++) {
-          const parts = parseSqlRow(valuesMatch[i]);
-          console.log(`Red ${i+1}: Broj kolona=${parts.length}, Tip="${parts[20]}", Naslov="${parts[5]?.substring(0, 30)}..."`);
-          rowsFound++;
+      inTable = true;
+      console.log(`\nPronasao sam pocetak tabele na liniji ${linesProcessed}`);
+      continue;
+    }
+
+    if (inTable) {
+      // Svaki red podataka pocinje sa ( i zavrsava sa ), ili );
+      const trimLine = line.trim();
+      if (trimLine.startsWith('(')) {
+        rowsFound++;
+        const parts = parseSqlRow(trimLine);
+        
+        if (rowsFound <= 10) {
+          console.log(`Red ${rowsFound}: Kolone=${parts.length}, Tip="${parts[20]}", Naslov="${parts[5]?.substring(0, 40)}..."`);
+        }
+
+        if (rowsFound === 10) {
+          console.log('... i tako dalje ...');
         }
       }
-      
-      if (linesFound >= 5) break;
+
+      // Ako linija zavrsava sa ; to je kraj INSERT bloka
+      if (trimLine.endsWith(';')) {
+        inTable = false;
+        console.log(`Zavrsen blok podataka. Pronadjeno ${rowsFound} redova.`);
+        if (rowsFound >= 50) break;
+      }
+    }
+
+    if (linesProcessed % 100000 === 0) {
+      process.stdout.write('.');
     }
   }
 
-  if (linesFound === 0) {
-    console.log('Nisam pronasao nijednu INSERT INTO tsp_posts liniju! Proveri da li se tabela mozda zove drugacije.');
+  if (rowsFound === 0) {
+    console.log('\nNije pronadjen nijedan red podataka! Mozda je format fajla drugaciji.');
   }
 }
 
 function parseSqlRow(row) {
-  const content = row.trim().slice(1, -1);
+  // Skidamo ( na pocetku i ), ili ); na kraju
+  let content = row.trim();
+  if (content.startsWith('(')) content = content.slice(1);
+  if (content.endsWith('),')) content = content.slice(0, -2);
+  if (content.endsWith(');')) content = content.slice(0, -2);
+  
   const parts = [];
   let current = '';
   let inString = false;
