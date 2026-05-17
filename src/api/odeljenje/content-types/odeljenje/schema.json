@@ -13,8 +13,11 @@
     "naziv": { "type": "string" },
     "slug": { "type": "uid", "targetField": "naziv" },
     "opis": {
-      "type": "richtext",
-      "customField": "plugin::ckeditor5.CKEditor"
+      "type": "customField",
+      "customField": "plugin::ckeditor5.CKEditor",
+      "options": {
+        "preset": "defaultHtml"
+      }
     },
     "smer": { "type": "string" },
     "trajanje": { "type": "string" },
