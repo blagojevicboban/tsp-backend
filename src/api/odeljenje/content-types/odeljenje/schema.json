@@ -14,7 +14,7 @@
     "slug": { "type": "uid", "targetField": "naziv" },
     "opis": {
       "type": "richtext",
-      "customField": "plugin::ckeditor.CKEditor"
+      "customField": "plugin::ckeditor5.CKEditor"
     },
     "smer": { "type": "string" },
     "trajanje": { "type": "string" },

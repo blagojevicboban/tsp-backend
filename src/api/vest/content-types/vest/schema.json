@@ -20,7 +20,7 @@
     },
     "sadrzaj": {
       "type": "richtext",
-      "customField": "plugin::ckeditor.CKEditor"
+      "customField": "plugin::ckeditor5.CKEditor"
     },
     "datum_objave": {
       "type": "date"
