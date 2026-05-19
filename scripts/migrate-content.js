@@ -1,6 +1,6 @@
 const fs = require('fs');
 const readline = require('readline');
-const Database = require('better-sqlite3');
+const { DatabaseSync } = require('node:sqlite');
 const path = require('path');
 
 const SQL_FILE = path.join(__dirname, '../backup.sql');
@@ -11,7 +11,7 @@ if (!fs.existsSync(DB_FILE)) {
   process.exit(1);
 }
 
-const db = new Database(DB_FILE);
+const db = new DatabaseSync(DB_FILE);
 
 function normalize(str) {
   if (!str) return '';

@@ -1,8 +1,8 @@
-const Database = require('better-sqlite3');
+const { DatabaseSync } = require('node:sqlite');
 const path = require('path');
 
 const DB_FILE = path.join(__dirname, '../.tmp/data.db');
-const db = new Database(DB_FILE);
+const db = new DatabaseSync(DB_FILE);
 
 function cleanEntities(str) {
   if (!str) return '';
