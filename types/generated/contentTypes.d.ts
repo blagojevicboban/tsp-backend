@@ -471,6 +471,40 @@ export interface ApiDokumentDokument extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiNastavnikNastavnik extends Struct.CollectionTypeSchema {
+  collectionName: 'nastavnici';
+  info: {
+    description: 'Nastavnici i stru\u010Dno osoblje';
+    displayName: 'Nastavnik';
+    pluralName: 'nastavnici';
+    singularName: 'nastavnik';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    email: Schema.Attribute.Email;
+    fotografija: Schema.Attribute.Media<'images'>;
+    ime_i_prezime: Schema.Attribute.String & Schema.Attribute.Required;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::nastavnik.nastavnik'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    redosled: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
+    telefon: Schema.Attribute.String;
+    uloga: Schema.Attribute.String & Schema.Attribute.Required;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface ApiOdeljenjeOdeljenje extends Struct.CollectionTypeSchema {
   collectionName: 'odeljenjas';
   info: {
@@ -494,7 +528,12 @@ export interface ApiOdeljenjeOdeljenje extends Struct.CollectionTypeSchema {
       Schema.Attribute.Private;
     naziv: Schema.Attribute.String;
     opis: Schema.Attribute.RichText &
-      Schema.Attribute.CustomField<'plugin::ckeditor.CKEditor'>;
+      Schema.Attribute.CustomField<
+        'plugin::ckeditor5.CKEditor',
+        {
+          preset: 'defaultHtml';
+        }
+      >;
     publishedAt: Schema.Attribute.DateTime;
     redosled: Schema.Attribute.Integer;
     slug: Schema.Attribute.UID<'naziv'>;
@@ -504,6 +543,49 @@ export interface ApiOdeljenjeOdeljenje extends Struct.CollectionTypeSchema {
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     zvanje: Schema.Attribute.String;
+  };
+}
+
+export interface ApiProjekatProjekat extends Struct.CollectionTypeSchema {
+  collectionName: 'projekti';
+  info: {
+    description: 'Erasmus+ i EU projekti \u0161kole';
+    displayName: 'Projekat';
+    pluralName: 'projekti';
+    singularName: 'projekat';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    aktivan: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    galerija: Schema.Attribute.Media<'images', true>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::projekat.projekat'
+    > &
+      Schema.Attribute.Private;
+    logo: Schema.Attribute.Media<'images'>;
+    naziv: Schema.Attribute.String & Schema.Attribute.Required;
+    opis: Schema.Attribute.RichText &
+      Schema.Attribute.CustomField<
+        'plugin::ckeditor5.CKEditor',
+        {
+          preset: 'defaultHtml';
+        }
+      >;
+    publishedAt: Schema.Attribute.DateTime;
+    slug: Schema.Attribute.UID<'naziv'> & Schema.Attribute.Required;
+    tip: Schema.Attribute.Enumeration<['erasmus', 'eu', 'ostalo']> &
+      Schema.Attribute.DefaultTo<'erasmus'>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    veb_sajt: Schema.Attribute.String;
   };
 }
 
@@ -530,7 +612,12 @@ export interface ApiVestVest extends Struct.CollectionTypeSchema {
     naslov: Schema.Attribute.String;
     publishedAt: Schema.Attribute.DateTime;
     sadrzaj: Schema.Attribute.RichText &
-      Schema.Attribute.CustomField<'plugin::ckeditor.CKEditor'>;
+      Schema.Attribute.CustomField<
+        'plugin::ckeditor5.CKEditor',
+        {
+          preset: 'defaultHtml';
+        }
+      >;
     slika: Schema.Attribute.Media<'images' | 'files' | 'videos' | 'audios'>;
     slug: Schema.Attribute.UID<'naslov'>;
     updatedAt: Schema.Attribute.DateTime;
@@ -1051,7 +1138,9 @@ declare module '@strapi/strapi' {
       'admin::transfer-token-permission': AdminTransferTokenPermission;
       'admin::user': AdminUser;
       'api::dokument.dokument': ApiDokumentDokument;
+      'api::nastavnik.nastavnik': ApiNastavnikNastavnik;
       'api::odeljenje.odeljenje': ApiOdeljenjeOdeljenje;
+      'api::projekat.projekat': ApiProjekatProjekat;
       'api::vest.vest': ApiVestVest;
       'plugin::content-releases.release': PluginContentReleasesRelease;
       'plugin::content-releases.release-action': PluginContentReleasesReleaseAction;

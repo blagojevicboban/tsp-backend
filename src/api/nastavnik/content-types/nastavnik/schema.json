@@ -1,0 +1,38 @@
+{
+  "kind": "collectionType",
+  "collectionName": "nastavnici",
+  "info": {
+    "singularName": "nastavnik",
+    "pluralName": "nastavnici",
+    "displayName": "Nastavnik",
+    "description": "Nastavnici i stručno osoblje"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "ime_i_prezime": {
+      "type": "string",
+      "required": true
+    },
+    "uloga": {
+      "type": "string",
+      "required": true
+    },
+    "email": {
+      "type": "email"
+    },
+    "telefon": {
+      "type": "string"
+    },
+    "fotografija": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": ["images"]
+    },
+    "redosled": {
+      "type": "integer",
+      "default": 0
+    }
+  }
+}

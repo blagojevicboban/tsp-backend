@@ -1,0 +1,53 @@
+{
+  "kind": "collectionType",
+  "collectionName": "projekti",
+  "info": {
+    "singularName": "projekat",
+    "pluralName": "projekti",
+    "displayName": "Projekat",
+    "description": "Erasmus+ i EU projekti škole"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "naziv": {
+      "type": "string",
+      "required": true
+    },
+    "slug": {
+      "type": "uid",
+      "targetField": "naziv",
+      "required": true
+    },
+    "opis": {
+      "type": "customField",
+      "customField": "plugin::ckeditor5.CKEditor",
+      "options": {
+        "preset": "defaultHtml"
+      }
+    },
+    "logo": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": ["images"]
+    },
+    "veb_sajt": {
+      "type": "string"
+    },
+    "galerija": {
+      "type": "media",
+      "multiple": true,
+      "allowedTypes": ["images"]
+    },
+    "aktivan": {
+      "type": "boolean",
+      "default": true
+    },
+    "tip": {
+      "type": "enumeration",
+      "enum": ["erasmus", "eu", "ostalo"],
+      "default": "erasmus"
+    }
+  }
+}
